@@ -55,6 +55,7 @@ export default function CardViewer() {
   const [flipped, setFlipped] = useState(false)
   const [bgColor, setBgColor] = useState('#0a0a0a')
   const [btnColor, setBtnColor] = useState('#141414')
+  const [logoSize, setLogoSize] = useState(80)
 
   function loadCard(cardId: string, categories: (CardConfig & { id: string })[]) {
     fetch(`/api/loyalty/${cardId}`)
@@ -79,17 +80,19 @@ export default function CardViewer() {
       fetch('/api/settings?key=menu_logo').then(r => r.json()).catch(() => ({})),
       fetch('/api/settings?key=profile_logo').then(r => r.json()).catch(() => ({})),
       fetch('/api/settings?key=menu_logo_color').then(r => r.json()).catch(() => ({})),
+      fetch('/api/settings?key=menu_logo_size').then(r => r.json()).catch(() => ({})),
       fetch('/api/settings?key=menu_hover_color').then(r => r.json()).catch(() => ({})),
       fetch('/api/settings?key=sidebar_accent').then(r => r.json()).catch(() => ({})),
       fetch('/api/settings?key=menu_bg_color').then(r => r.json()).catch(() => ({})),
       fetch('/api/settings?key=menu_btn_color').then(r => r.json()).catch(() => ({})),
-    ]).then(([catRes, nameRes, logoRes, pLogoRes, logoColorRes, hoverRes, accentRes, bgRes, btnRes]) => {
+    ]).then(([catRes, nameRes, logoRes, pLogoRes, logoColorRes, logoSizeRes, hoverRes, accentRes, bgRes, btnRes]) => {
       const brandName = nameRes?.value || DEFAULT_CFG.brandText
       const brandLogoUrl = logoRes?.value || pLogoRes?.value || ''
       const brandLogoColor = logoColorRes?.value || ''
       const brandAccent = hoverRes?.value || accentRes?.value || DEFAULT_CFG.color
       if (bgRes?.value) setBgColor(bgRes.value)
       if (btnRes?.value) setBtnColor(btnRes.value)
+      if (logoSizeRes?.value) setLogoSize(Number(logoSizeRes.value) || 80)
 
       let categories: (CardConfig & { id: string })[] = []
       if (catRes?.value) {
@@ -128,7 +131,7 @@ export default function CardViewer() {
   if (step === 'loading') {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center" style={{ backgroundColor: bgColor }}>
-        {cfg.logo && <BrandLogo src={cfg.logo} color={cfg.logoColor} alt="Logo" className="h-20 w-auto mx-auto mb-4 animate-pulse" />}
+        {cfg.logo && <BrandLogo src={cfg.logo} color={cfg.logoColor} alt="Logo" className="mx-auto mb-4 animate-pulse" style={{ width: logoSize, height: logoSize, objectFit: 'contain' }} />}
         <p className="text-sm" style={{ color: contrastTextSoft(bgColor) }}>Cargando tu tarjeta...</p>
       </div>
     )
@@ -139,7 +142,7 @@ export default function CardViewer() {
     const btnTextSoft = contrastTextSoft(btnColor)
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center p-6" style={{ backgroundColor: bgColor }}>
-        {cfg.logo && <BrandLogo src={cfg.logo} color={cfg.logoColor} alt="Logo" className="h-20 w-auto mx-auto mb-6" />}
+        {cfg.logo && <BrandLogo src={cfg.logo} color={cfg.logoColor} alt="Logo" className="mx-auto mb-6" style={{ width: logoSize, height: logoSize, objectFit: 'contain' }} />}
         <div className="w-full max-w-sm rounded-3xl p-8 text-center space-y-3" style={{ backgroundColor: btnColor, border: `1px solid ${cfg.color}` }}>
           <div className="text-5xl">🔗</div>
           <h2 className="text-xl font-black" style={{ color: btnText }}>
@@ -158,7 +161,7 @@ export default function CardViewer() {
     const btnTextSoft = contrastTextSoft(btnColor)
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center p-6" style={{ backgroundColor: bgColor }}>
-        {cfg.logo && <BrandLogo src={cfg.logo} color={cfg.logoColor} alt="Logo" className="h-20 w-auto mx-auto mb-6" />}
+        {cfg.logo && <BrandLogo src={cfg.logo} color={cfg.logoColor} alt="Logo" className="mx-auto mb-6" style={{ width: logoSize, height: logoSize, objectFit: 'contain' }} />}
         <div className="w-full max-w-sm rounded-3xl p-8 text-center space-y-4" style={{ backgroundColor: btnColor, border: `1px solid ${cfg.color}` }}>
           <div className="text-5xl animate-pulse">⏳</div>
           <h2 className="text-xl font-black" style={{ color: btnText }}>
