@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
 
+const RID = process.env.NEXT_PUBLIC_RESTAURANT_ID || 'default'
+
 export interface LoyaltyCard {
   id: string
   name: string
@@ -29,4 +31,33 @@ function toCard(row: Record<string, unknown>): LoyaltyCard {
 export async function getCard(id: string): Promise<LoyaltyCard | undefined> {
   const { data } = await supabase.from('loyalty_cards').select('*').eq('id', id).maybeSingle()
   return data ? toCard(data) : undefined
+}
+
+export async function getAllCards(): Promise<LoyaltyCard[]> {
+  const { data } = await supabase.from('loyalty_cards').select('*').eq('restaurant_id', RID).order('registered_at', { ascending: false })
+  return (data ?? []).map(toCard)
+}
+
+// Las tarjetas expiran según los meses configurados por categoría (default 3 meses).
+function expiryDate(months = 3): string {
+  const d = new Date()
+  d.setMonth(d.getMonth() + months)
+  return d.toISOString()
+}
+
+export async function deleteCard(id: string): Promise<boolean> {
+  const { error } = await supabase.from('loyalty_cards').delete().eq('id', id)
+  return !error
+}
+
+export async function deactivateCard(id: string): Promise<LoyaltyCard | null> {
+  const { data } = await supabase.from('loyalty_cards').update({ active: false }).eq('id', id).select().single()
+  return data ? toCard(data) : null
+}
+
+export async function activateCard(id: string): Promise<LoyaltyCard | null> {
+  const { data } = await supabase.from('loyalty_cards')
+    .update({ active: true, expires_at: expiryDate() })
+    .eq('id', id).select().single()
+  return data ? toCard(data) : null
 }
