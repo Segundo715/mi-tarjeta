@@ -8,6 +8,7 @@ import { BrandLogo } from '@/app/components/BrandLogo'
 const TABS = [
   { href: '/admin', label: 'Sellar', icon: 'coffee' as const },
   { href: '/admin/tarjetas', label: 'Tarjetas', icon: 'card' as const },
+  { href: '/admin/configuracion', label: 'Configuración', icon: 'settings' as const },
 ]
 
 function AdminChrome({ children }: { children: React.ReactNode }) {
