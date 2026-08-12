@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { getCard, deleteCard, deactivateCard, activateCard } from '@/lib/loyaltyDb'
+import { getCard, deleteCard, deactivateCard, activateCard, addStamp, redeemCard } from '@/lib/loyaltyDb'
 import { verifySession } from '@/lib/auth'
 
 // GET es público: el visor de tarjeta (/?id=) lo necesita sin sesión.
@@ -17,6 +17,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { action } = await req.json()
   if (action === 'deactivate') return Response.json(await deactivateCard(id))
   if (action === 'activate') return Response.json(await activateCard(id))
+  if (action === 'stamp') return Response.json(await addStamp(id))
+  if (action === 'redeem') return Response.json(await redeemCard(id))
   return Response.json({ error: 'Acción inválida' }, { status: 400 })
 }
 

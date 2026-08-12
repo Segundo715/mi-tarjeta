@@ -106,6 +106,7 @@ export default function AdminTarjetasPage() {
   const [uploading, setUploading] = useState<'image' | 'icon' | 'brandLogo' | null>(null)
   const [adminName, setAdminName] = useState('')
   const [catsOpen, setCatsOpen] = useState(false)
+  const [busyId, setBusyId] = useState<string | null>(null)
 
   useEffect(() => {
     const match = document.cookie.split('; ').find(r => r.startsWith('admin_name='))
@@ -243,6 +244,27 @@ export default function AdminTarjetasPage() {
     if (!confirm('¿Eliminar esta tarjeta?')) return
     await fetch(`/api/loyalty/${id}`, { method: 'DELETE' })
     load()
+  }
+
+  // Sellar/canjear directo desde la lista — sin necesidad de escanear un QR.
+  async function stampCard(id: string) {
+    setBusyId(id)
+    await fetch(`/api/loyalty/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'stamp' }),
+    })
+    await load()
+    setBusyId(null)
+  }
+
+  async function redeemCard(id: string) {
+    setBusyId(id)
+    await fetch(`/api/loyalty/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'redeem' }),
+    })
+    await load()
+    setBusyId(null)
   }
 
   async function deactivateInactive() {
@@ -729,6 +751,21 @@ export default function AdminTarjetasPage() {
 
                 {/* Acciones */}
                 <div className="flex gap-2 shrink-0">
+                  {card.active && (
+                    card.visits >= (cat?.goal ?? 5) ? (
+                      <button onClick={() => redeemCard(card.id)} disabled={busyId === card.id}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-60"
+                        style={{ backgroundColor: '#f59e0b', color: '#000' }}>
+                        {busyId === card.id ? 'Canjeando...' : 'Canjear premio'}
+                      </button>
+                    ) : (
+                      <button onClick={() => stampCard(card.id)} disabled={busyId === card.id}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-60"
+                        style={{ backgroundColor: `${S.accent}20`, color: S.accent }}>
+                        {busyId === card.id ? 'Sellando...' : 'Sellar visita'}
+                      </button>
+                    )
+                  )}
                   <button onClick={() => toggleCard(card)}
                     className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
                     style={card.active

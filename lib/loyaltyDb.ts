@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getSetting } from './settingsDb'
 
 const RID = process.env.NEXT_PUBLIC_RESTAURANT_ID || 'default'
 
@@ -43,6 +44,41 @@ function expiryDate(months = 3): string {
   const d = new Date()
   d.setMonth(d.getMonth() + months)
   return d.toISOString()
+}
+
+// Meta de sellos de la categoría real de la tarjeta (reward_categories),
+// en vez de un 5 fijo — cada categoría puede tener su propia meta.
+async function goalFor(cardType: string): Promise<number> {
+  try {
+    const raw = await getSetting('reward_categories')
+    if (raw) {
+      const cats: { id: string; goal?: number }[] = JSON.parse(raw)
+      const cat = cats.find(c => c.id === cardType)
+      if (cat?.goal) return cat.goal
+    }
+  } catch {}
+  return 5
+}
+
+export async function addStamp(id: string): Promise<LoyaltyCard | null> {
+  const { data: row } = await supabase.from('loyalty_cards').select('*').eq('id', id).maybeSingle()
+  if (!row) return null
+  const c = toCard(row)
+  const goal = await goalFor(c.cardType)
+  // Tarjetas inactivas o que ya llegaron a la meta no acumulan más hasta canjearse.
+  if (!c.active || c.visits >= goal) return c
+  const newStamps = [...c.stamps, { timestamp: new Date().toISOString(), visitsAfter: c.visits + 1 }]
+  const { data } = await supabase.from('loyalty_cards')
+    .update({ visits: c.visits + 1, stamps: newStamps, expires_at: expiryDate() })
+    .eq('id', id).select().single()
+  return data ? toCard(data) : null
+}
+
+export async function redeemCard(id: string): Promise<LoyaltyCard | null> {
+  const { data } = await supabase.from('loyalty_cards')
+    .update({ visits: 0, expires_at: expiryDate() })
+    .eq('id', id).select().single()
+  return data ? toCard(data) : null
 }
 
 export async function deleteCard(id: string): Promise<boolean> {
